@@ -32,12 +32,18 @@ except Exception as e:
 
 @app.route('/health')
 def health():
-    return {'status': 'ok', 'message': 'App is running'}
+    return {'status': 'ok', 'message': 'App is running'}, 200
+
+@app.route('/test')
+def test():
+    return "Hello from Railway!", 200
 
 @app.route('/')
 def index():
     try:
+        print("Index route called")
         games = database.get_all_games()
+        print(f"Found {len(games)} games")
         return render_template('index.html', games=games)
     except Exception as e:
         print(f"Error in index route: {e}")
