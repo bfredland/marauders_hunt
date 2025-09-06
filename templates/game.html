@@ -80,10 +80,38 @@
                 
                 const checkbox = itemDiv.querySelector('input');
                 checkbox.addEventListener('change', function() {
+                    // Try WebSocket first
                     socket.emit('toggle_item', {
                         game_id: gameId,
                         item_id: parseInt(this.dataset.itemId)
                     });
+                    
+                    // Fallback: HTTP request for non-WebSocket environments
+                    fetch('/toggle_item', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            game_id: gameId,
+                            item_id: parseInt(this.dataset.itemId)
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update UI manually if WebSockets don't work
+                            if (data.completed) {
+                                this.checked = true;
+                                this.parentElement.classList.add('completed');
+                            } else {
+                                this.checked = false;
+                                this.parentElement.classList.remove('completed');
+                            }
+                            document.getElementById('totalPoints').textContent = data.total_points;
+                        }
+                    })
+                    .catch(err => console.log('WebSocket fallback used'));
                 });
                 
                 itemsList.appendChild(itemDiv);

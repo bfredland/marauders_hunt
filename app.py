@@ -51,6 +51,24 @@ def game_data(game_id):
     except Exception as e:
         return jsonify({'error': str(e)})
 
+@app.route('/toggle_item', methods=['POST'])
+def toggle_item():
+    data = request.get_json()
+    game_id = data.get('game_id')
+    item_id = data.get('item_id')
+    
+    try:
+        completed = database.toggle_item(game_id, item_id)
+        total_points = database.get_game_total_points(game_id)
+        
+        return jsonify({
+            'success': True,
+            'completed': completed,
+            'total_points': total_points
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
+
 @socketio.on('join_game')
 def on_join(data):
     game_id = data['game_id']
