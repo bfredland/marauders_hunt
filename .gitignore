@@ -1,0 +1,30 @@
+# Database files - don't overwrite production data
+marauders_hunt.db
+*.db
+
+# CSV files - preserve custom hunt items
+hunt_items.csv
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
