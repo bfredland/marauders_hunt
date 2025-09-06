@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ game_name }} - Bar Scavenger Hunt</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍻 {{ game_name }}</h1>
+            <div class="total-points">
+                Total Points: <span id="totalPoints">0</span>
+            </div>
+            <a href="/" class="back-link">← Back to Home</a>
+        </header>
+        
+        <div class="hunt-items">
+            <h2>Find These Items:</h2>
+            <div id="itemsList">
+                <!-- Items will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const gameId = '{{ game_id }}';
+        let totalPoints = 0;
+
+        // Join the game room
+        socket.emit('join_game', {game_id: gameId});
+
+        // Load initial game state
+        fetch(`/game_data/${gameId}`)
+            .then(response => response.json())
+            .then(data => {
+                displayItems(data.items);
+                document.getElementById('totalPoints').textContent = data.total_points;
+                totalPoints = data.total_points;
+            });
+
+        // Listen for real-time updates
+        socket.on('item_toggled', function(data) {
+            if (data.game_id === gameId) {
+                const checkbox = document.querySelector(`input[data-item-id="${data.item_id}"]`);
+                const itemDiv = checkbox.parentElement;
+                
+                if (data.completed) {
+                    checkbox.checked = true;
+                    itemDiv.classList.add('completed');
+                } else {
+                    checkbox.checked = false;
+                    itemDiv.classList.remove('completed');
+                }
+                
+                // Update total points from server
+                document.getElementById('totalPoints').textContent = data.total_points;
+                totalPoints = data.total_points;
+            }
+        });
+
+        function displayItems(items) {
+            const itemsList = document.getElementById('itemsList');
+            itemsList.innerHTML = '';
+            
+            items.forEach(item => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = `hunt-item ${item[3] ? 'completed' : ''}`;
+                
+                itemDiv.innerHTML = `
+                    <label class="item-label">
+                        <input type="checkbox" data-item-id="${item[0]}" ${item[3] ? 'checked' : ''}>
+                        <span class="item-name">${item[1]}</span>
+                        <span class="item-points">${item[2]} pts</span>
+                    </label>
+                `;
+                
+                const checkbox = itemDiv.querySelector('input');
+                checkbox.addEventListener('change', function() {
+                    socket.emit('toggle_item', {
+                        game_id: gameId,
+                        item_id: parseInt(this.dataset.itemId)
+                    });
+                });
+                
+                itemsList.appendChild(itemDiv);
+            });
+        }
+
+        function updateTotalPoints() {
+            totalPoints = 0;
+            document.querySelectorAll('.hunt-item.completed').forEach(item => {
+                const points = parseInt(item.querySelector('.item-points').textContent);
+                totalPoints += points;
+            });
+            document.getElementById('totalPoints').textContent = totalPoints;
+        }
+    </script>
+</body>
+</html>

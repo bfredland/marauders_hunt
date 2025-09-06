@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bar Scavenger Hunt</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🍻 Bar Scavenger Hunt</h1>
+        </header>
+        
+        <div class="new-game-section">
+            <h2>Start New Game</h2>
+            <form id="newGameForm">
+                <input type="text" id="gameName" placeholder="Enter game name..." required>
+                <button type="submit">Start Hunt!</button>
+            </form>
+        </div>
+        
+        <div class="games-list">
+            <h2>Previous Games</h2>
+            <div id="gamesList">
+                {% for game in games %}
+                <div class="game-item">
+                    <a href="/game/{{ game[0] }}" class="game-link">
+                        <div class="game-info">
+                            <strong>{{ game[1] }}</strong>
+                            <span class="points">{{ game[3] }} points</span>
+                        </div>
+                        <div class="game-date">{{ game[2].split()[0] }}</div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('newGameForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const gameName = document.getElementById('gameName').value.trim();
+            if (gameName) {
+                // Generate unique game ID
+                const gameId = Date.now().toString(36) + Math.random().toString(36).substr(2);
+                
+                fetch('/create_game', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        game_id: gameId,
+                        game_name: gameName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.href = `/game/${gameId}`;
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
