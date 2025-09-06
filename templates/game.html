@@ -29,9 +29,47 @@
         const socket = io();
         const gameId = '{{ game_id }}';
         let totalPoints = 0;
+        let lastUpdateTime = Date.now();
+        let pollInterval;
 
         // Join the game room
         socket.emit('join_game', {game_id: gameId});
+
+        // Polling function for non-WebSocket environments
+        function pollForUpdates() {
+            fetch(`/game_data/${gameId}?t=${Date.now()}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.items) {
+                        updateGameState(data.items, data.total_points);
+                    }
+                })
+                .catch(err => console.log('Polling update failed:', err));
+        }
+
+        // Update game state from server data
+        function updateGameState(items, serverTotalPoints) {
+            items.forEach(item => {
+                const checkbox = document.querySelector(`input[data-item-id="${item[0]}"]`);
+                if (checkbox) {
+                    const itemDiv = checkbox.parentElement;
+                    const isCompleted = item[3] === 1;
+                    
+                    if (checkbox.checked !== isCompleted) {
+                        checkbox.checked = isCompleted;
+                        if (isCompleted) {
+                            itemDiv.classList.add('completed');
+                        } else {
+                            itemDiv.classList.remove('completed');
+                        }
+                    }
+                }
+            });
+            
+            // Update total points
+            document.getElementById('totalPoints').textContent = serverTotalPoints;
+            totalPoints = serverTotalPoints;
+        }
 
         // Load initial game state
         fetch(`/game_data/${gameId}`)
@@ -40,25 +78,47 @@
                 displayItems(data.items);
                 document.getElementById('totalPoints').textContent = data.total_points;
                 totalPoints = data.total_points;
+                
+                // Start polling for updates (fallback for non-WebSocket environments)
+                pollInterval = setInterval(pollForUpdates, 3000); // Poll every 3 seconds
             });
 
-        // Listen for real-time updates
+        // Listen for real-time updates (WebSocket)
         socket.on('item_toggled', function(data) {
             if (data.game_id === gameId) {
                 const checkbox = document.querySelector(`input[data-item-id="${data.item_id}"]`);
-                const itemDiv = checkbox.parentElement;
-                
-                if (data.completed) {
-                    checkbox.checked = true;
-                    itemDiv.classList.add('completed');
-                } else {
-                    checkbox.checked = false;
-                    itemDiv.classList.remove('completed');
+                if (checkbox) {
+                    const itemDiv = checkbox.parentElement;
+                    
+                    if (data.completed) {
+                        checkbox.checked = true;
+                        itemDiv.classList.add('completed');
+                    } else {
+                        checkbox.checked = false;
+                        itemDiv.classList.remove('completed');
+                    }
+                    
+                    // Update total points from server
+                    document.getElementById('totalPoints').textContent = data.total_points;
+                    totalPoints = data.total_points;
                 }
-                
-                // Update total points from server
-                document.getElementById('totalPoints').textContent = data.total_points;
-                totalPoints = data.total_points;
+            }
+        });
+
+        // Stop polling when WebSocket works
+        socket.on('connect', function() {
+            console.log('WebSocket connected - real-time updates active');
+            if (pollInterval) {
+                clearInterval(pollInterval);
+                pollInterval = null;
+            }
+        });
+
+        // Resume polling if WebSocket fails
+        socket.on('disconnect', function() {
+            console.log('WebSocket disconnected - using polling fallback');
+            if (!pollInterval) {
+                pollInterval = setInterval(pollForUpdates, 3000);
             }
         });
 
