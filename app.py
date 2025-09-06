@@ -107,3 +107,8 @@ if __name__ == '__main__':
 else:
     # For production (PythonAnywhere)
     application = app
+
+# For Railway deployment
+port = int(os.environ.get('PORT', 5000))
+if os.environ.get('RAILWAY_ENVIRONMENT'):
+    socketio.run(app, host='0.0.0.0', port=port)
