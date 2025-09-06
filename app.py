@@ -102,13 +102,14 @@ def handle_toggle_item(data):
         emit('error', {'message': str(e)})
 
 if __name__ == '__main__':
-    # For development
-    socketio.run(app, debug=True, host='127.0.0.1', port=5001, allow_unsafe_werkzeug=True)
+    # Check if running on Railway
+    port = int(os.environ.get('PORT', 5001))
+    if os.environ.get('PORT'):
+        # Railway or other cloud deployment
+        socketio.run(app, host='0.0.0.0', port=port, debug=False)
+    else:
+        # Local development
+        socketio.run(app, debug=True, host='127.0.0.1', port=5001, allow_unsafe_werkzeug=True)
 else:
     # For production (PythonAnywhere)
     application = app
-
-# For Railway deployment
-port = int(os.environ.get('PORT', 5000))
-if os.environ.get('RAILWAY_ENVIRONMENT'):
-    socketio.run(app, host='0.0.0.0', port=port)
