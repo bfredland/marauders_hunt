@@ -1,9 +1,14 @@
 import sqlite3
 import csv
+import os
 from datetime import datetime
 
+def get_db_connection():
+    db_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'marauders_hunt.db')
+    return sqlite3.connect(db_path)
+
 def init_db():
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Create tables
@@ -40,7 +45,7 @@ def init_db():
     conn.close()
 
 def load_hunt_items_from_csv(csv_file):
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Clear existing items
@@ -59,7 +64,7 @@ def load_hunt_items_from_csv(csv_file):
     conn.close()
 
 def get_hunt_items():
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('SELECT * FROM hunt_items ORDER BY points DESC')
     items = cursor.fetchall()
@@ -67,14 +72,14 @@ def get_hunt_items():
     return items
 
 def create_game(game_id, game_name):
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('INSERT INTO games (id, name) VALUES (?, ?)', (game_id, game_name))
     conn.commit()
     conn.close()
 
 def get_all_games():
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT g.id, g.name, g.created_at, 
@@ -90,7 +95,7 @@ def get_all_games():
     return games
 
 def get_game_progress(game_id):
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT hi.id, hi.item_name, hi.points, 
@@ -104,7 +109,7 @@ def get_game_progress(game_id):
     return progress
 
 def toggle_item(game_id, item_id):
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
     # Check if already completed
@@ -128,7 +133,7 @@ def toggle_item(game_id, item_id):
     return completed
 
 def get_game_total_points(game_id):
-    conn = sqlite3.connect('marauders_hunt.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         SELECT COALESCE(SUM(hi.points), 0) as total_points
