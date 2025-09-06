@@ -106,7 +106,7 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     if os.environ.get('PORT'):
         # Railway or other cloud deployment
-        socketio.run(app, host='0.0.0.0', port=port, debug=False)
+        socketio.run(app, host='0.0.0.0', port=port, debug=False, allow_unsafe_werkzeug=True)
     else:
         # Local development
         socketio.run(app, debug=True, host='127.0.0.1', port=5001, allow_unsafe_werkzeug=True)
