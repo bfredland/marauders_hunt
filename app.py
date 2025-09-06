@@ -3,6 +3,11 @@ from flask_socketio import SocketIO, emit, join_room, leave_room
 import database
 import os
 
+# Ensure we're in the right directory
+current_dir = os.path.dirname(os.path.abspath(__file__))
+print(f"Current working directory: {current_dir}")
+print(f"Files in directory: {os.listdir(current_dir)}")
+
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your-secret-key-change-this'
 socketio = SocketIO(app, cors_allowed_origins="*")
@@ -25,10 +30,20 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+@app.route('/health')
+def health():
+    return {'status': 'ok', 'message': 'App is running'}
+
 @app.route('/')
 def index():
-    games = database.get_all_games()
-    return render_template('index.html', games=games)
+    try:
+        games = database.get_all_games()
+        return render_template('index.html', games=games)
+    except Exception as e:
+        print(f"Error in index route: {e}")
+        import traceback
+        traceback.print_exc()
+        return f"Error: {e}", 500
 
 @app.route('/game/<game_id>')
 def game(game_id):
